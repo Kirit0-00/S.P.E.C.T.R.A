@@ -1,0 +1,167 @@
+/* S.P.E.C.T.R.A. - Rekoras Dark Analytics & Crypto Compliance Theme */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg-primary: #07090E;
+  --bg-card: rgba(14, 20, 32, 0.75);
+  --bg-card-border: rgba(0, 242, 254, 0.18);
+  --accent-cyan: #00F2FE;
+  --accent-blue: #4FACFE;
+  --accent-emerald: #10B981;
+  --accent-crimson: #EF4444;
+  --text-primary: #F3F4F6;
+  --text-secondary: #94A3B8;
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --button_radius: 0.75em;
+  --button_color: #00F2FE;
+  --button_outline_color: #083344;
+}
+
+/* Global App Styling */
+.stApp {
+  background: radial-gradient(circle at 50% 0%, #0F172A 0%, #07090E 75%) !important;
+  font-family: var(--font-main) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Header & Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-main) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+}
+
+/* Glassmorphism Card Container */
+.rekoras-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  margin-bottom: 1.25rem;
+}
+
+.rekoras-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: rgba(0, 242, 254, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Sidebar Customization */
+[data-testid="stSidebar"] {
+  background-color: #0A0E17 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2 {
+  color: var(--accent-cyan) !important;
+}
+
+/* Rekoras Tabs Styling */
+.stTabs [data-baseweb="tab-list"] {
+  gap: 8px;
+  background-color: rgba(14, 20, 32, 0.6);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stTabs [data-baseweb="tab"] {
+  height: 42px;
+  border-radius: 10px;
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  border: none !important;
+  background-color: transparent !important;
+  transition: all 0.2s ease;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+  color: var(--text-primary) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.stTabs [aria-selected="true"] {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 172, 254, 0.1) 100%) !important;
+  color: var(--accent-cyan) !important;
+  border: 1px solid rgba(0, 242, 254, 0.4) !important;
+}
+
+/* 3D Tactile Push Button Design (Adapted from Uiverse.io by Voxybuns) */
+div.stButton > button, .spectra-button {
+  font-family: var(--font-main) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  cursor: pointer !important;
+  border-radius: var(--button_radius) !important;
+  background: var(--button_outline_color) !important;
+  padding: 0 !important;
+  display: inline-block !important;
+  box-shadow: 0 4px 0 #03151e !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+div.stButton > button > div, div.stButton > button > p {
+  display: block !important;
+  box-sizing: border-box !important;
+  border: 2px solid var(--button_outline_color) !important;
+  border-radius: var(--button_radius) !important;
+  padding: 0.65em 1.4em !important;
+  background: linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%) !important;
+  color: #040810 !important;
+  transform: translateY(-0.25em) !important;
+  transition: transform 0.1s ease !important;
+  font-weight: 800 !important;
+}
+
+div.stButton > button:hover {
+  box-shadow: 0 5px 0 #03151e !important;
+}
+
+div.stButton > button:hover > div, div.stButton > button:hover > p {
+  transform: translateY(-0.35em) !important;
+  background: linear-gradient(135deg, #38f9d7 0%, #4facfe 100%) !important;
+}
+
+div.stButton > button:active {
+  box-shadow: 0 1px 0 #03151e !important;
+}
+
+div.stButton > button:active > div, div.stButton > button:active > p {
+  transform: translateY(0) !important;
+}
+
+/* Image Containers & Captions */
+[data-testid="stImage"] {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-testid="stImageCaption"] {
+  color: var(--text-secondary) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.8rem !important;
+  text-align: center !important;
+  padding-top: 6px !important;
+}
+
+/* Sliders & Inputs */
+.stSlider [data-baseweb="slider"] {
+  color: var(--accent-cyan) !important;
+}
