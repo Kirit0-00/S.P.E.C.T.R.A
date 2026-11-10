@@ -1,4 +1,5 @@
-# DIP Image Forensics: Active System Memory Ledger
+# S.P.E.C.T.R.A.: Spatial Processing and Entropy Checks for Tamper Recognition Analysis
+## Active System Memory Ledger
 
 ## 1. Project Specifications
 - **Objective:** Pure Classical Digital Image Processing (DIP) Image Forensics System (Copy-Move & Splice Detection).
