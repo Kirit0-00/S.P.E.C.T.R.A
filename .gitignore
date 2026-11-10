@@ -70,3 +70,4 @@ tmp/
 scratch/
 *.log
 docs/*.tmp
+results/

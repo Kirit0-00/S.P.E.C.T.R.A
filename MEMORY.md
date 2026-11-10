@@ -66,6 +66,7 @@
 | `src.morphology.segmentation` | `extract_morphological_boundary(binary)` | `(H, W)`, `uint8` in `{0, 255}` | `(H, W)`, `uint8` in `{0, 255}` | Completed & Tested |
 | `src.morphology.segmentation` | `compute_skeleton(binary)` | `(H, W)`, `uint8` in `{0, 255}` | `(H, W)`, `uint8` in `{0, 255}` | Completed & Tested |
 | `src.morphology.segmentation` | `refine_tamper_mask(heatmap, ...)` | `(H, W)`, `float64` in `[0.0, 1.0]` | `tuple(clean_mask, boundary)` in `{0, 255}` | Completed & Tested |
+| `src.detection.copy_move_blocks`| `detect_copy_move_blocks(img, ...)` | `(H, W, 3)` or `(H, W)`, `uint8` | `tuple(heatmap float64, is_detected bool)` | Completed & Tested |
 | `app.py` | Streamlit Dashboard Orchestrator | UI user interactions | Interactive Web Visualization | Completed |
 
 ---
