@@ -26,6 +26,9 @@
 
 Unlike black-box deep learning models that suffer from dataset hallucination and lack explainability, **S.P.E.C.T.R.A.** operates entirely on classical principles from Digital Image Processing (Gonzalez & Woods). Every detection stage transforms raw spatial image data through frequency decomposition, compression artifact analysis, and mathematical morphology to produce explainable binary tamper heatmaps.
 
+> 📘 **Mathematical & Theoretical Course Manual:**  
+> For in-depth mathematical derivations, formula proofs, and exam/viva explanations mapped directly to **Gonzalez & Woods**, see [**`DIP_THEORY_AND_ARCHITECTURE.md`**](DIP_THEORY_AND_ARCHITECTURE.md).
+
 ---
 
 ## 🔬 Tech Stack & Official Documentation
