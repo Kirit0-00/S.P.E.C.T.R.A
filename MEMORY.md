@@ -6,7 +6,7 @@
 - **Runtime:** Python 3.10+
 - **Core Libraries:** `numpy`, `scipy`, `skimage` (scikit-image), `cv2` (OpenCV-Python), `matplotlib`, `streamlit`.
 - **Architectural Constraints:**
-  - Maximum 200 lines per `.py` source file (strictly verified: max file is 117 lines).
+  - Maximum 200 lines per `.py` source file (strictly verified: all files <= 171 lines).
   - Zero Deep Learning (No Torch/TensorFlow/Keras/ONNX).
   - Explicit mathematical rigor mapping directly to classic DIP syllabus modules.
 
@@ -41,9 +41,32 @@
 | `src.frequency.frequency_filters` | `apply_frequency_filter(f_shifted, h_filter)` | `(M, N)` complex, `(M, N)` float | `(M, N)`, `complex128` filtered spectrum | Completed & Tested |
 | `src.frequency.homomorphic` | `create_homomorphic_filter(shape, d0, gL, gH, c)` | `(M, N)`, `float` params | `(M, N)`, `float64` transfer function | Completed & Tested |
 | `src.frequency.homomorphic` | `apply_homomorphic_filter(img, d0, gL, gH, c, eps)` | `(H, W)`, `uint8` / `float` | `tuple(enhanced, residual)`, `float64` | Completed & Tested |
-| `tests.synthetic_forger` | `generate_synthetic_base(H, W)` | `(H, W)` dimensions | `(H, W, 3)`, `uint8` synthetic scene | Completed & Tested |
-| `tests.synthetic_forger` | `create_synthetic_copy_move(...)` | `(H, W, 3)`, patch & dest pos | `tuple(forged_img, gt_mask)` | Completed & Tested |
-| `tests.synthetic_forger` | `create_synthetic_splice(...)` | `(H, W, 3)`, quality & patch | `tuple(forged_img, gt_mask)` | Completed & Tested |
+| `src.compression.ela` | `compute_ela(img, quality, multiplier)` | `(H, W, 3)` or `(H, W)`, `uint8` | `tuple(visual uint8, raw float64)` | Completed & Tested |
+| `src.compression.ela` | `compute_ela_variance(ela_raw, ksize)` | `(H, W)`, `float64` | `(H, W)`, `float64` in `[0.0, 1.0]` | Completed & Tested |
+| `src.compression.block_grid` | `compute_block_artifact_grid(img, block_size)` | `(H, W)` or `(H, W, 3)`, `uint8` | `(H, W)`, `float64` in `[0.0, 1.0]` | Completed & Tested |
+| `src.compression.block_grid` | `compute_grid_periodicity(img, block_size)` | `(H, W)`, `uint8` / `float64` | `dict(h_score, v_score)` in `[0.0, 1.0]` | Completed & Tested |
+| `src.compression.entropy` | `compute_local_entropy(img, radius, selem)` | `(H, W)` or `(H, W, 3)`, `uint8` | `(H, W)`, `float64` in `[0.0, 1.0]` | Completed & Tested |
+| `src.compression.entropy` | `compute_global_entropy(img)` | `(H, W)` or `(H, W, 3)`, `uint8` | `float` in `[0.0, 8.0]` bits | Completed & Tested |
+| `src.detection.copy_move` | `extract_features_with_variance_gating(img, ...)` | `(H, W, 3)` or `(H, W)`, `uint8` | `tuple(keypoints, descriptors)` | Completed & Tested |
+| `src.detection.copy_move` | `match_copy_move_features(...)` | `list(kps)`, `(N, D)` descriptors | `list(matched_pairs)` | Completed & Tested |
+| `src.detection.copy_move` | `detect_copy_move(img, ...)` | `(H, W, 3)` or `(H, W)`, `uint8` | `tuple(heatmap, inlier_pairs, is_detected)` | Completed & Tested |
+| `src.detection.splice_detector` | `detect_splice_anomalies(img, ...)` | `(H, W, 3)` or `(H, W)`, `uint8` | `tuple(fused_heatmap, cues_dict)` | Completed & Tested |
+| `src.morphology.operators` | `get_structuring_element(shape, ksize)` | `str`, `int` | `(ksize, ksize)`, `uint8` binary kernel | Completed & Tested |
+| `src.morphology.operators` | `apply_erosion(img, ksize, shape, iter)` | `(H, W)`, `uint8` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.operators` | `apply_dilation(img, ksize, shape, iter)` | `(H, W)`, `uint8` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.operators` | `apply_opening(img, ksize, shape)` | `(H, W)`, `uint8` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.operators` | `apply_closing(img, ksize, shape)` | `(H, W)`, `uint8` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.operators` | `apply_morphological_gradient(img, ksize)` | `(H, W)`, `uint8` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.reconstruction` | `fill_morphological_holes(binary_mask)` | `(H, W)`, `uint8` in `{0, 255}` | `(H, W)`, `uint8` in `{0, 255}` | Completed & Tested |
+| `src.morphology.reconstruction` | `apply_tophat(img, ksize, shape)` | `(H, W)`, `uint8` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.reconstruction` | `apply_blackhat(img, ksize, shape)` | `(H, W)`, `uint8` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.reconstruction` | `morphological_reconstruction(marker, mask)` | `(H, W)`, `(H, W)` | `(H, W)`, `uint8` | Completed & Tested |
+| `src.morphology.segmentation` | `apply_otsu_threshold(heatmap)` | `(H, W)`, `float64` in `[0.0, 1.0]` | `tuple(binary uint8, thresh float)` | Completed & Tested |
+| `src.morphology.segmentation` | `filter_connected_components(binary, min_area)`| `(H, W)`, `uint8` in `{0, 255}` | `(H, W)`, `uint8` in `{0, 255}` | Completed & Tested |
+| `src.morphology.segmentation` | `extract_morphological_boundary(binary)` | `(H, W)`, `uint8` in `{0, 255}` | `(H, W)`, `uint8` in `{0, 255}` | Completed & Tested |
+| `src.morphology.segmentation` | `compute_skeleton(binary)` | `(H, W)`, `uint8` in `{0, 255}` | `(H, W)`, `uint8` in `{0, 255}` | Completed & Tested |
+| `src.morphology.segmentation` | `refine_tamper_mask(heatmap, ...)` | `(H, W)`, `float64` in `[0.0, 1.0]` | `tuple(clean_mask, boundary)` in `{0, 255}` | Completed & Tested |
+| `app.py` | Streamlit Dashboard Orchestrator | UI user interactions | Interactive Web Visualization | Completed |
 
 ---
 
@@ -57,21 +80,14 @@
 ---
 
 ## 4. Known Edge Cases & Handling Protocols
-1. **Low Texture / Uniform Flat Regions:**
-   - *Risk:* Keypoint starvation in SIFT/ORB, false positives in variance-based ELA.
-   - *Protocol:* Handled via `compute_local_variance(img, ksize)`; flat regions where $\sigma^2(x, y) < \epsilon_{\text{flat}}$ are masked out.
-2. **Lossless / Non-JPEG Inputs (PNG/TIFF/BMP):**
-   - *Risk:* ELA baseline discrepancy because original image never suffered JPEG quantization.
-   - *Protocol:* Handled by baseline re-encoding at $Q_{\text{ref}} = 90$ with dynamic normalization.
-3. **High Dynamic Range & Extreme Illuminations:**
-   - *Risk:* Logarithmic transforms blow up when $I(x, y) \to 0$ ($\ln(0)$ singularity).
-   - *Protocol:* Handled via numerical epsilon offset: $\ln(I(x, y) + \epsilon)$ with $\epsilon = 10^{-5}$ in `src/frequency/homomorphic.py`.
-4. **Resizing & Dimension Padding in 2D FFT:**
-   - *Risk:* 2D FFT performance degraded by odd/prime dimensions.
-   - *Protocol:* Handled via `scipy.fft.next_fast_len` optimal zero-padding with crop back to original shape in `compute_2d_ifft`.
+1. **Low Texture / Uniform Flat Regions:** Handled via `compute_local_variance(img, ksize)` gating ($\sigma^2(x, y) < \tau_{\text{flat}}$ excluded from descriptor matching).
+2. **Lossless / Non-JPEG Inputs (PNG/TIFF/BMP):** Handled by baseline re-encoding at $Q_{\text{ref}} = 90$ with dynamic min-max normalization.
+3. **High Dynamic Range & Extreme Illuminations:** Handled via numerical epsilon offset $\ln(I(x, y) + \epsilon)$ with $\epsilon = 10^{-5}$ in homomorphic filtering.
+4. **Resizing & Dimension Padding in 2D FFT:** Handled via `scipy.fft.next_fast_len` optimal composite zero-padding with exact cropping in inverse transform.
+5. **Small Isolated Noise Specks in Anomaly Heatmaps:** Eliminated via Otsu binarization + morphological opening ($B_{\text{ellipse}}$) + Connected Component Analysis minimum area threshold ($A \ge 150$ px).
 
 ---
 
 ## 5. Execution State
-- **Current Phase:** PHASE 2 in progress (Modules 1 & 2 Complete: Spatial Preprocessing & Frequency Transforms Verified with 100% Passing Tests).
-- **Compliance Status:** 0 Deep Learning imports, 100% DIP syllabus mapping, all files $\le 117$ lines.
+- **Current Phase:** PHASE 2 & 3 COMPLETE (All 5 Classical DIP Core Modules, Synthetic Testbeds, Unit Tests, and Streamlit Dashboard Implemented and 100% Passing).
+- **Compliance Status:** 0 Deep Learning imports, 100% DIP syllabus mapping, all files $\le 171$ lines.
