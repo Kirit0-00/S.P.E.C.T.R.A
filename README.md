@@ -5,7 +5,7 @@
   <p><em>A 100% Classical Digital Image Processing (DIP) Framework for Copy-Move & Splice Forensics</em></p>
 
   <p>
-    <a href="https://github.com/Kirit0-00/SPECTRA"><img src="https://img.shields.io/badge/GitHub-Kirit0--00%2FSPECTRA-181717.svg?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repository"/></a>
+    <a href="https://github.com/Kirit0-00/S.P.E.C.T.R.A"><img src="https://img.shields.io/badge/GitHub-Kirit0--00%2FS.P.E.C.T.R.A-181717.svg?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repository"/></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+"/></a>
     <a href="https://docs.opencv.org/"><img src="https://img.shields.io/badge/OpenCV-5.0%2B-5C3EE8.svg?style=for-the-badge&logo=opencv&logoColor=white" alt="OpenCV"/></a>
     <a href="https://numpy.org/"><img src="https://img.shields.io/badge/NumPy-Vectorized-013243.svg?style=for-the-badge&logo=numpy&logoColor=white" alt="NumPy"/></a>
@@ -76,8 +76,8 @@ Ensure Python 3.10 or higher is installed on your system.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Kirit0-00/SPECTRA.git
-cd SPECTRA
+git clone https://github.com/Kirit0-00/S.P.E.C.T.R.A.git
+cd S.P.E.C.T.R.A
 
 # 2. Create and activate a virtual environment
 python3 -m venv .venv
