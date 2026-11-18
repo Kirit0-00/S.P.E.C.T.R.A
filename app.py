@@ -1,6 +1,5 @@
 """
-S.P.E.C.T.R.A. — Streamlit Dashboard
-Rekoras Crypto Analytics Dark Design System
+S.P.E.C.T.R.A. — Rekoras Crypto Analytics Dark Forensic Dashboard
 Pure UI orchestrator (<= 200 lines). All DIP logic lives in src/.
 """
 from pathlib import Path
@@ -12,6 +11,9 @@ from src.detection import detect_copy_move, detect_splice_anomalies
 from src.frequency import apply_homomorphic_filter, compute_2d_fft, get_magnitude_spectrum
 from src.morphology import refine_tamper_mask
 from src.spatial import apply_clahe, compute_sobel_gradients, to_grayscale
+from src.ui_helpers import (
+    EXPERIMENT_SAMPLES, draw_copy_move_vectors, load_experiment_sample, make_dip_card,
+)
 from tests.synthetic_forger import (
     create_synthetic_copy_move, create_synthetic_splice, generate_synthetic_base,
 )
@@ -22,147 +24,167 @@ css = Path("assets/style.css")
 if css.exists():
     st.markdown(f"<style>{css.read_text()}</style>", unsafe_allow_html=True)
 
-# ── Helpers ────────────────────────────────────────────────────
 H = lambda s: st.markdown(s, unsafe_allow_html=True)
 SL = lambda t: H(f'<div class="section-label"><div class="label-line"></div><span>{t}</span></div>')
 SD = lambda: H('<div class="sidebar-divider"></div>')
 SLL = lambda t: H(f'<p class="sidebar-section-label">{t}</p>')
 
 # ── Top Nav ────────────────────────────────────────────────────
-H("""<div class="spectra-nav">
-  <div class="nav-brand"><div class="nav-logo">S</div>
-    <span class="nav-title">S.P.E.C.T.R.A.</span></div>
+H("""<div class="spectra-nav"><div class="nav-brand"><div class="nav-logo">S</div>
+  <span class="nav-title">S.P.E.C.T.R.A.</span></div>
   <span class="nav-pill">Forensic Analytics Engine</span>
   <div class="nav-status"><div class="status-dot"></div>
-    <span>SYSTEM NOMINAL &nbsp;|&nbsp; 100% Classical DIP</span></div>
-</div>""")
+  <span>SYSTEM NOMINAL &nbsp;|&nbsp; 100% Classical DIP</span></div></div>""")
 
-# ── Sidebar ────────────────────────────────────────────────────
+# ── Sidebar Feed Control ───────────────────────────────────────
 with st.sidebar:
     H('<div class="sidebar-header"><span class="rekoras-badge">Control Terminal</span></div>')
-    SLL("Input Feed")
-    input_mode = st.selectbox("feed", ["Synthetic Benchmark","Upload Image"], label_visibility="collapsed")
-    if input_mode == "Upload Image":
-        up = st.file_uploader("Image", type=["png","jpg","jpeg","bmp"])
-        img_bgr = cv2.imdecode(np.frombuffer(up.read(), np.uint8), cv2.IMREAD_COLOR) if up else None
-        if img_bgr is None:
-            st.info("Upload an image to begin."); st.stop()
-    else:
+    SLL("Input Feed Mode")
+    feed = st.selectbox("Feed", ["🔬 Live Experiment Gallery", "Synthetic Benchmark", "Upload Image"], label_visibility="collapsed")
+    context_desc = ""
+    if feed == "🔬 Live Experiment Gallery":
+        SLL("Select Real Scene")
+        s_opts = {k: v["title"] for k, v in EXPERIMENT_SAMPLES.items()}
+        chosen_key = st.selectbox("Scene", list(s_opts.keys()), format_func=lambda k: s_opts[k], label_visibility="collapsed")
+        SLL("Asset Variant")
+        variant = st.radio("Variant", ["Authentic", "Copy-Move", "Splice"], horizontal=True, label_visibility="collapsed")
+        img_bgr, context_desc = load_experiment_sample(chosen_key, variant)
+    elif feed == "Synthetic Benchmark":
         SLL("Scenario")
-        case = st.selectbox("case", ["Copy-Move","Splice","Authentic"], label_visibility="collapsed")
+        scen = st.selectbox("Case", ["Copy-Move", "Splice", "Authentic"], label_visibility="collapsed")
         base = generate_synthetic_base(256, 256)
-        if case == "Copy-Move":
-            img_bgr, _ = create_synthetic_copy_move(base, source_box=(30,30,80,80), dest_pos=(140,140))
-        elif case == "Splice":
-            img_bgr, _ = create_synthetic_splice(base, donor_quality=55, splice_box=(40,40,80,80))
+        if scen == "Copy-Move":
+            img_bgr, _ = create_synthetic_copy_move(base, (30, 30, 80, 80), (140, 140))
+        elif scen == "Splice":
+            img_bgr, _ = create_synthetic_splice(base, donor_quality=55, splice_box=(40, 40, 80, 80))
         else:
             img_bgr = base
-    SD()
-    SLL("Hyperparameters")
-    ela_q   = st.slider("ELA  Q_ref",          50, 98,   90)
-    homo_d0 = st.slider("Homomorphic  D₀",     10.0, 80.0, 30.0)
-    min_b   = st.slider("CCA Min Area (px)",   50, 500, 150)
-    SD()
-    st.button("⚡ EXECUTE ANALYSIS")
+        context_desc = f"Procedural Synthetic Benchmark: {scen} Scenario"
+    else:
+        up = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg", "bmp"])
+        img_bgr = cv2.imdecode(np.frombuffer(up.read(), np.uint8), cv2.IMREAD_COLOR) if up else None
+        if img_bgr is None:
+            st.info("Upload an image to execute forensics."); st.stop()
+        context_desc = "User Uploaded Image"
+    SD(); SLL("Forensic Hyperparameters")
+    ela_q = st.slider("ELA Q_ref", 50, 98, 90)
+    homo_d0 = st.slider("Homomorphic D₀", 10.0, 80.0, 30.0)
+    min_b = st.slider("CCA Min Area (px)", 50, 500, 150)
+    cm_ratio = st.slider("g2NN Match Ratio", 0.50, 0.85, 0.65, 0.05)
+    SD(); st.button("⚡ EXECUTE COMPLIANCE CHECK")
 
-# ── Shared Computations ────────────────────────────────────────
+# ── Precomputations & Telemetry ────────────────────────────────
 img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-gray    = to_grayscale(img_bgr)
-h, w    = img_bgr.shape[:2]
-mean_px = float(np.mean(gray)); std_px = float(np.std(gray))
+gray = to_grayscale(img_bgr)
+h, w = img_bgr.shape[:2]
+mean_px, std_px = float(np.mean(gray)), float(np.std(gray))
 _, ela_raw = compute_ela(img_bgr, quality=ela_q)
-ela_score  = float(np.mean(ela_raw) * 100)
+ela_score = float(np.mean(ela_raw) * 100)
 
-# ── Hero ───────────────────────────────────────────────────────
+# ── Hero & KPI Header ──────────────────────────────────────────
 H("""<div class="spectra-hero">
   <div class="hero-label">Spatial Processing & Entropy Checks for Tamper Recognition Analysis</div>
   <h1>S.P.E.C.T.R.A.</h1>
-  <p class="hero-sub">Classical DIP Forensics Engine &nbsp;·&nbsp; Gonzalez &amp; Woods</p>
-</div>""")
+  <p class="hero-sub">100% Classical DIP Engine &nbsp;·&nbsp; Gonzalez &amp; Woods Architecture</p></div>""")
 
-# ── KPI Row ────────────────────────────────────────────────────
 k1, k2, k3, k4 = st.columns(4)
-kpis = [
-    (k1,"Resolution",    f"{w}×{h}",         "cyan",  "px · sRGB uint8"),
-    (k2,"Mean Luminance",f"{mean_px:.1f}",   "",      f"σ = {std_px:.1f}"),
-    (k3,"ELA Score",     f"{ela_score:.3f}%","cyan" if ela_score<1 else "red",f"Q_ref = {ela_q}"),
-    (k4,"DL Imports",    "0",                "green", "100% Classical DIP"),
-]
-for col, lbl, val, cls, sub in kpis:
-    col.markdown(f'<div class="stat-card"><div class="stat-label">{lbl}</div>'
-                 f'<div class="stat-value {cls}">{val}</div>'
-                 f'<div class="stat-sub">{sub}</div></div>', unsafe_allow_html=True)
+k1.markdown(f'<div class="stat-card"><div class="stat-label">Resolution</div><div class="stat-value cyan">{w}×{h}</div><div class="stat-sub">px · sRGB Matrix</div></div>', unsafe_allow_html=True)
+k2.markdown(f'<div class="stat-card"><div class="stat-label">Signal Energy</div><div class="stat-value">{mean_px:.1f}</div><div class="stat-sub">σ = {std_px:.1f} Luminance</div></div>', unsafe_allow_html=True)
+k3.markdown(f'<div class="stat-card"><div class="stat-label">ELA Anomaly</div><div class="stat-value {"cyan" if ela_score<1.0 else "red"}">{ela_score:.3f}%</div><div class="stat-sub">Q_ref = {ela_q}</div></div>', unsafe_allow_html=True)
+k4.markdown('<div class="stat-card"><div class="stat-label">DL Dependencies</div><div class="stat-value green">0</div><div class="stat-sub">100% Classical DIP</div></div>', unsafe_allow_html=True)
 H("<br>")
 
-# ── Tabs ───────────────────────────────────────────────────────
-t1, t2, t3, t4, t5 = st.tabs(["🖼  Overview","🔬  Spatial","〰  Frequency","📦  Compression","🎯  Tamper"])
+# ── Inspection Tabs ────────────────────────────────────────────
+t1, t2, t3, t4, t5 = st.tabs(["🖼  Overview", "🔬  Spatial", "〰  Frequency", "📦  Compression", "🎯  Tamper Localization"])
 
 with t1:
     c1, c2 = st.columns(2, gap="large")
     with c1:
-        SL("Input Matrix")
-        st.image(img_rgb, use_container_width=True, caption=f"f(x,y) — {w}×{h} px")
+        SL("Asset Input Matrix f(x,y)")
+        st.image(img_rgb, use_container_width=True, caption=f"Active Feed Matrix — {w}×{h} px")
     with c2:
-        SL("System Telemetry")
-        clr = 'var(--crimson)' if ela_score > 1 else 'var(--emerald)'
+        SL("Operational Context & Telemetry")
+        clr = 'var(--crimson)' if ela_score > 1.0 else 'var(--emerald)'
         H(f"""<div class="rekoras-card">
-          <p style="margin:0 0 .8rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2)">Pipeline Architecture</p>
-          <p style="margin:.35rem 0">📐 <strong>Resolution:</strong> <span class="mono-tag">{w}×{h} px</span></p>
-          <p style="margin:.35rem 0">📊 <strong>Signal Energy:</strong> <span class="mono-tag">μ={mean_px:.2f} σ={std_px:.2f}</span></p>
-          <p style="margin:.35rem 0">🧠 <strong>Algorithm:</strong> <span class="mono-tag">100% Classical DIP</span></p>
-          <p style="margin:.35rem 0">⚡ <strong>ELA Score:</strong> <span class="mono-tag" style="color:{clr}">{ela_score:.4f}%</span></p>
-          <p style="margin:.35rem 0">🚫 <strong>DL Imports:</strong> <span class="mono-tag" style="color:var(--emerald)">0</span></p>
+          <p style="margin:0 0 .6rem;font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--text-2)">Asset Profile</p>
+          <p style="margin:.3rem 0"><strong>Target Description:</strong> <span style="color:var(--cyan-400)">{context_desc}</span></p>
+          <p style="margin:.3rem 0">📐 <strong>Spatial Resolution:</strong> <span class="mono-tag">{w}×{h} px</span></p>
+          <p style="margin:.3rem 0">📊 <strong>Luminance Distribution:</strong> <span class="mono-tag">μ={mean_px:.2f}, σ={std_px:.2f}</span></p>
+          <p style="margin:.3rem 0">⚡ <strong>Quantization Residual:</strong> <span class="mono-tag" style="color:{clr}">{ela_score:.4f}%</span></p>
+          <p style="margin:.3rem 0">🛡️ <strong>Compliance Standard:</strong> <span class="mono-tag">Gonzalez & Woods Classical DIP</span></p>
         </div>""")
 
 with t2:
-    SL("Spatial Transforms — Gonzalez & Woods Ch. 3")
+    SL("Spatial Domain Filtering — Gonzalez & Woods Chapter 3")
     s1, s2, s3 = st.columns(3, gap="medium")
-    s1.image(gray, caption="Luminance I(x,y)", use_container_width=True)
-    s2.image(apply_clahe(img_bgr, clip_limit=2.5), caption="CLAHE Local Contrast", use_container_width=True)
-    _, _, mag = compute_sobel_gradients(gray)
-    s3.image(mag, caption="Sobel Gradient M(x,y)", use_container_width=True)
+    with s1:
+        st.image(gray, caption="Luminance I(x,y)", use_container_width=True)
+        H(make_dip_card("Luminance Decoupling", "I = 0.299R + 0.587G + 0.114B", "Removes chrominance bias; isolates perceived brightness.", "Uniform tonal representation across channels."))
+    with s2:
+        clahe_img = apply_clahe(img_bgr, clip_limit=2.5)
+        st.image(clahe_img, caption="CLAHE Enhanced Image", use_container_width=True)
+        H(make_dip_card("Adaptive Equalization (CLAHE)", "Tile-based Local Hist CDF Redistribution", "Amplifies contrast in localized 8×8 tiles while clipping noise peaks.", "Reveals subtle feathering and paste boundaries."))
+    with s3:
+        _, _, mag = compute_sobel_gradients(gray)
+        st.image(mag, caption="Sobel Magnitude M(x,y)", use_container_width=True)
+        H(make_dip_card("Sobel Directional Derivatives", "M(x,y) = sqrt(Gx² + Gy²)", "First-order spatial difference operators detect abrupt gradients.", "Sharp edge lines outlining pasted donor regions."))
 
 with t3:
-    SL("Frequency Domain — Gonzalez & Woods Ch. 4")
+    SL("Frequency Domain & Illumination Analysis — Chapter 4")
     f_shift, _ = compute_2d_fft(gray)
     _, homo_res = apply_homomorphic_filter(gray, d0=homo_d0)
     f1, f2 = st.columns(2, gap="medium")
-    f1.image(get_magnitude_spectrum(f_shift), caption="2D FFT Spectrum S(u,v)", use_container_width=True)
-    f2.image(homo_res, caption="Homomorphic Residual Δ_illum(x,y)", use_container_width=True)
+    with f1:
+        st.image(get_magnitude_spectrum(f_shift), caption="2D Centered FFT Spectrum S(u,v)", use_container_width=True)
+        H(make_dip_card("2D Centered Fourier Spectrum", "S(u,v) = ln(1 + |F(u,v)|)", "Transforms spatial luminance to frequency distribution via 2D DFT.", "Periodic spikes or cross-lines reveal cloned texture repetition."))
+    with f2:
+        st.image(homo_res, caption="Homomorphic Residual Δ_illum(x,y)", use_container_width=True)
+        H(make_dip_card("Homomorphic Illumination Filter", "ln(f) = ln(i) + ln(r) -> HPF(D0) -> exp", "Separates low-freq lighting i(x,y) from high-freq reflectance r(x,y).", "Inconsistent illumination shading on spliced donor patches."))
 
 with t4:
-    SL("JPEG Redundancy & Entropy — Ch. 8")
+    SL("Compression Domain & Information Entropy — Chapter 8")
     ela_vis, _ = compute_ela(img_bgr, quality=ela_q)
     bag = compute_block_artifact_grid(img_bgr, block_size=8)
     entropy_map = compute_local_entropy(gray, radius=4)
     e1, e2, e3 = st.columns(3, gap="medium")
-    e1.image(ela_vis, caption="Error Level Analysis E(x,y)", use_container_width=True)
-    e2.image(bag, caption="Block Artifact Grid BAG(x,y)", use_container_width=True)
-    e3.image(entropy_map, caption="Shannon Entropy H(x,y)", use_container_width=True)
+    with e1:
+        st.image(ela_vis, caption=f"Error Level Analysis (Q={ela_q})", use_container_width=True)
+        H(make_dip_card("Error Level Analysis (ELA)", "E(x,y) = |f(x,y) - f_Q90(x,y)| * α", "JPEG reaches error equilibrium on repeated saves; foreign patches do not.", "Bright anomalous highlights over spliced/foreign regions."))
+    with e2:
+        st.image(bag, caption="Block Artifact Grid BAG(x,y)", use_container_width=True)
+        H(make_dip_card("Block Artifact Grid (BAG)", "Δ²_x = [1, -2, 1], 8×8 DCT boundaries", "Measures step discontinuity along JPEG 8×8 block edges.", "Grid disruption or missing grid steps along spliced margins."))
+    with e3:
+        st.image(entropy_map, caption="Local Shannon Entropy H(x,y)", use_container_width=True)
+        H(make_dip_card("Shannon Rank Entropy", "H = -Σ p(i) * log2(p(i))", "Measures local information content and pixel randomness in bits.", "Uniform patches or altered noise profiles show low entropy."))
 
 with t5:
-    SL("Forensic Detection — Ch. 9 & 10")
-    cm_map, inliers, is_cm = detect_copy_move(img_bgr, n_features=1200)
-    splice_map, _ = detect_splice_anomalies(img_bgr, ela_quality=ela_q, homomorphic_d0=homo_d0)
-    active_map = cm_map if (is_cm and np.max(cm_map) > 0.3) else splice_map
+    SL("Tamper Localization & Verdict — Chapters 9 & 10")
+    cm_map, inliers, is_cm = detect_copy_move(img_bgr, n_features=1800, ratio_thresh=cm_ratio, min_inliers=12)
+    spl_map, _ = detect_splice_anomalies(img_bgr, ela_quality=ela_q, homomorphic_d0=homo_d0)
+    active_map = cm_map if (is_cm and np.max(cm_map) > 0.25) else spl_map
     clean_mask, _ = refine_tamper_mask(active_map, min_area=min_b)
     overlay = img_rgb.copy(); overlay[clean_mask == 255] = [255, 51, 102]
-    blended = cv2.addWeighted(img_rgb, 0.6, overlay, 0.4, 0)
-    r1, r2, r3 = st.columns(3, gap="medium")
-    r1.image(active_map, caption="Anomaly Heatmap A(x,y)", use_container_width=True)
-    r2.image(clean_mask, caption="Tamper Mask g(x,y)", use_container_width=True)
-    r3.image(blended, caption="Forensic Overlay", use_container_width=True)
+    blended = cv2.addWeighted(img_rgb, 0.65, overlay, 0.35, 0)
+    v1, v2, v3 = st.columns(3, gap="medium")
+    with v1:
+        if is_cm and inliers:
+            st.image(draw_copy_move_vectors(img_rgb, inliers), caption=f"Cloned Vectors ({len(inliers)} inliers)", use_container_width=True)
+        else:
+            st.image(active_map, caption="Anomaly Heatmap A(x,y)", use_container_width=True)
+    with v2:
+        st.image(clean_mask, caption="Morphological Mask g(x,y)", use_container_width=True)
+    with v3:
+        st.image(blended, caption="Forensic Tamper Overlay", use_container_width=True)
     H("<br>")
     pct = (np.count_nonzero(clean_mask) / clean_mask.size) * 100
-    method = 'Copy-Move (Keypoint RANSAC)' if is_cm else 'Splice (ELA+Homo+BAG)'
-    if pct > 0.5:
+    method = f"Copy-Move Cloning ({len(inliers)} SIFT+RANSAC Inliers)" if is_cm else "Splice Anomaly (ELA + Homomorphic + BAG Fusion)"
+    if pct > 0.5 or (is_cm and len(inliers) >= 12):
         H(f"""<div class="verdict-tampered"><div class="verdict-icon">⚠️</div><div>
-          <p class="verdict-title">COMPLIANCE VIOLATION DETECTED</p>
-          <p class="verdict-body">Flagged area: <strong style="color:var(--crimson)">{pct:.2f}%</strong>
-          &nbsp;·&nbsp; Inliers: <strong style="color:var(--cyan-400)">{len(inliers)}</strong>
-          &nbsp;·&nbsp; Method: <strong>{method}</strong></p></div></div>""")
+          <p class="verdict-title">TAMPERING CONFIRMED — COMPLIANCE VIOLATION DETECTED</p>
+          <p class="verdict-body">Flagged region: <strong style="color:var(--crimson)">{pct:.2f}%</strong> of total image area
+          &nbsp;·&nbsp; Detection Algorithm: <strong>{method}</strong>
+          &nbsp;·&nbsp; Mathematical Confidence: <strong style="color:var(--cyan-400)">HIGH</strong></p></div></div>""")
     else:
         H("""<div class="verdict-authentic"><div class="verdict-icon">✅</div><div>
-          <p class="verdict-title">ASSET INTEGRITY VERIFIED — AUTHENTIC</p>
-          <p class="verdict-body">No statistically significant cloning or illumination splicing anomalies detected.</p>
-          </div></div>""")
+          <p class="verdict-title">ASSET INTEGRITY CERTIFIED — AUTHENTIC</p>
+          <p class="verdict-body">No statistically significant cloning vectors, illumination divergence, or JPEG grid misalignment detected.</p></div></div>""")
