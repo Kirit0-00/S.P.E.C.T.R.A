@@ -49,7 +49,7 @@ def compute_block_artifact_grid(img: np.ndarray, block_size: int = 8) -> np.ndar
     if max_val > 0:
         smoothed_bag /= max_val
 
-    return smoothed_bag
+    return np.clip(smoothed_bag, 0.0, 1.0)
 
 
 def compute_grid_periodicity(img: np.ndarray, block_size: int = 8) -> dict[str, float]:

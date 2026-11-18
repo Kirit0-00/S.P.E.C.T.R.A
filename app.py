@@ -138,7 +138,7 @@ with t3:
         st.image(get_magnitude_spectrum(f_shift), caption="2D Centered FFT Spectrum S(u,v)", use_container_width=True)
         H(make_dip_card("2D Centered Fourier Spectrum", "S(u,v) = ln(1 + |F(u,v)|)", "Transforms spatial luminance to frequency distribution via 2D DFT.", "Periodic spikes or cross-lines reveal cloned texture repetition."))
     with f2:
-        st.image(homo_res, caption="Homomorphic Residual Δ_illum(x,y)", use_container_width=True)
+        st.image(homo_res, caption="Homomorphic Residual Δ_illum(x,y)", use_container_width=True, clamp=True)
         H(make_dip_card("Homomorphic Illumination Filter", "ln(f) = ln(i) + ln(r) -> HPF(D0) -> exp", "Separates low-freq lighting i(x,y) from high-freq reflectance r(x,y).", "Inconsistent illumination shading on spliced donor patches."))
 
 with t4:
@@ -151,10 +151,10 @@ with t4:
         st.image(ela_vis, caption=f"Error Level Analysis (Q={ela_q})", use_container_width=True)
         H(make_dip_card("Error Level Analysis (ELA)", "E(x,y) = |f(x,y) - f_Q90(x,y)| * α", "JPEG reaches error equilibrium on repeated saves; foreign patches do not.", "Bright anomalous highlights over spliced/foreign regions."))
     with e2:
-        st.image(bag, caption="Block Artifact Grid BAG(x,y)", use_container_width=True)
+        st.image(bag, caption="Block Artifact Grid BAG(x,y)", use_container_width=True, clamp=True)
         H(make_dip_card("Block Artifact Grid (BAG)", "Δ²_x = [1, -2, 1], 8×8 DCT boundaries", "Measures step discontinuity along JPEG 8×8 block edges.", "Grid disruption or missing grid steps along spliced margins."))
     with e3:
-        st.image(entropy_map, caption="Local Shannon Entropy H(x,y)", use_container_width=True)
+        st.image(entropy_map, caption="Local Shannon Entropy H(x,y)", use_container_width=True, clamp=True)
         H(make_dip_card("Shannon Rank Entropy", "H = -Σ p(i) * log2(p(i))", "Measures local information content and pixel randomness in bits.", "Uniform patches or altered noise profiles show low entropy."))
 
 with t5:
@@ -170,7 +170,7 @@ with t5:
         if is_cm and inliers:
             st.image(draw_copy_move_vectors(img_rgb, inliers), caption=f"Cloned Vectors ({len(inliers)} inliers)", use_container_width=True)
         else:
-            st.image(active_map, caption="Anomaly Heatmap A(x,y)", use_container_width=True)
+            st.image(active_map, caption="Anomaly Heatmap A(x,y)", use_container_width=True, clamp=True)
     with v2:
         st.image(clean_mask, caption="Morphological Mask g(x,y)", use_container_width=True)
     with v3:
