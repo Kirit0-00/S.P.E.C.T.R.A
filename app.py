@@ -148,7 +148,7 @@ with t5:
     spl_map, _ = detect_splice_anomalies(img_bgr, ela_quality=ela_q, homomorphic_d0=homo_d0)
     method, is_tampered = "Authentic Asset", False
     if target_mode == "Authentic":
-        active_map, clean_mask = np.zeros((h, w), dtype=np.float64), np.zeros((h, w), dtype=np.uint8)
+        active_map, clean_mask = spl_map, np.zeros((h, w), dtype=np.uint8)
     elif target_mode == "Copy-Move" or (target_mode == "Auto" and (is_cm and len(inliers) >= 12)):
         active_map = cm_map
         clean_mask, _ = refine_tamper_mask(cm_map, min_area=min_b)
@@ -157,19 +157,22 @@ with t5:
         active_map = spl_map
         clean_mask, _ = refine_tamper_mask(spl_map, min_area=min_b)
         is_tampered = True; method = "Splice Anomaly (ELA + Homomorphic + BAG Fusion)"
-    else: active_map, clean_mask = np.zeros((h, w), dtype=np.float64), np.zeros((h, w), dtype=np.uint8)
+    else: active_map, clean_mask = spl_map, np.zeros((h, w), dtype=np.uint8)
     overlay = img_rgb.copy()
     if is_tampered: overlay[clean_mask == 255] = [255, 51, 102]
     blended = cv2.addWeighted(img_rgb, 0.65, overlay, 0.35, 0)
+    pct = (np.count_nonzero(clean_mask) / clean_mask.size) * 100
     v1, v2, v3 = st.columns(3, gap="medium")
     with v1:
         if is_tampered and "Copy-Move" in method and inliers:
             st.image(draw_copy_move_vectors(img_rgb, inliers), caption=f"Cloned Vectors ({len(inliers)} inliers)", use_container_width=True)
-        else: st.image(active_map, caption="Anomaly Heatmap A(x,y)", use_container_width=True, clamp=True)
-    with v2: st.image(clean_mask, caption="Morphological Mask g(x,y)", use_container_width=True)
-    with v3: st.image(blended, caption="Forensic Tamper Overlay", use_container_width=True)
+        else:
+            st.image(active_map, caption="Anomaly Heatmap A(x,y) [Ambient]" if not is_tampered else "Anomaly Heatmap A(x,y) [Tamper Peak]", use_container_width=True, clamp=True)
+    with v2:
+        st.image(clean_mask, caption="Tamper Mask g(x,y) — 0 Flagged px (Clean)" if not is_tampered else f"Tamper Mask g(x,y) — {pct:.2f}% Flagged", use_container_width=True)
+    with v3:
+        st.image(blended, caption="Verified Authentic Asset (Integrity OK)" if not is_tampered else "Forensic Tamper Overlay", use_container_width=True)
     H("<br>")
-    pct = (np.count_nonzero(clean_mask) / clean_mask.size) * 100
     if is_tampered and pct > 0.05:
         H(f"""<div class="verdict-tampered"><div class="verdict-icon">⚠️</div><div>
           <p class="verdict-title">TAMPERING CONFIRMED — COMPLIANCE VIOLATION DETECTED</p>
